@@ -2,8 +2,11 @@ package andybot.view;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
 
 import javax.swing.JPanel;
 
@@ -19,6 +22,8 @@ public class JMazePanel extends JPanel {
     final static int CELL_SIZE = 40; // 20 pixels per cell
     private Maze maze;
     private int cellSize = CELL_SIZE;
+    private boolean gameOver;
+    private String gameOverMsg;
     
     
     /**
@@ -107,8 +112,11 @@ public class JMazePanel extends JPanel {
         // 2. eyes
         drawEyes (robot, g, px+margin, py+margin, sz - 2*margin, sz - 2*margin);
         
+        // 3. gameover
+        drawGameOver(g);
         g.setColor(cache);
     }
+
 
     private void drawEyes(Robot bot, Graphics g, int px, int py, int width, int height) {
         int x =px, y = py, w = width, h = height ;
@@ -142,5 +150,40 @@ public class JMazePanel extends JPanel {
         }
         
         g.fillRect(x, y, w, h);
+    }
+
+    private void drawGameOver(Graphics g) {
+        if ( ! this.gameOver) {
+            return ;
+        }
+        
+        int W = maze.getRowSize() * cellSize;
+        int H = maze.getColSize() * cellSize;
+        Font font = new Font("Gulim", Font.BOLD, 14);
+        
+        Dimension fontDim = calculateFontArea ( this.gameOverMsg, font);
+        int startX = (W - fontDim.width) /2;
+        int startY = (H - fontDim.height)/2;
+        g.setFont(font);
+        g.drawString(gameOverMsg, startX, startY);
+        
+        this.gameOver = false;
+        this.gameOverMsg = "";
+        
+        
+    }
+    
+    private Dimension calculateFontArea(String text, Font font) {
+        AffineTransform affinetransform = new AffineTransform();     
+        FontRenderContext frc = new FontRenderContext(affinetransform,true,true);     
+        
+        int textwidth = (int)(font.getStringBounds(text, frc).getWidth());
+        int textheight = (int)(font.getStringBounds(text, frc).getHeight());
+        return new Dimension(textwidth, textheight);
+    }
+
+    public void setGameOver(String cause) {
+        this.gameOver = true;
+        this.gameOverMsg = cause;
     }
 }

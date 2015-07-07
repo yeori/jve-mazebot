@@ -20,21 +20,28 @@ public class Robot {
     private List<BotListener> listeners = new ArrayList<>() ;
     private int direction ;
     
+    private String name ;
     /**
      * 로봇 인스턴스를 생성 후 반환합니다.
      */
     public Robot ( ) {
         // 초기 방향은 북쪽, 위치는 (0,0)에서 시작합니다.
-        direction = Maze.DIR_NORTH ;
-        setLocation(0, 0);
+        this( 0, 0, "unknown bot");
     }
+    
     /**
      * 주어진 위치에서 시작하는 로봇 인스턴스를 생성 후 반환합니다.
      * @param x - 시작할 x좌표
      * @param y - 시작할 y좌표
      */
     public Robot(int x, int y) {
-        direction = Maze.DIR_NORTH;
+        this(x, y, "unknown bot");
+    }
+    
+    public Robot (int x, int y, String botName) {
+        // 초기 방향은 북쪽, 위치는 (0,0)에서 시작합니다.
+        direction = Maze.DIR_NORTH ;
+        this.name = botName;
         setLocation(x, y);
     }
 
@@ -70,6 +77,22 @@ public class Robot {
         /* TODO 앞으로 step만큼 전진하는 코드를 구현해봅니다.
          * 현재 방향에 따라서 적절한 위치를 계산한 후 setLocation을 호출합니다. 
          */
+        
+        int newX = loc.x;
+        int newY = loc.y;
+        
+        if ( direction == Maze.DIR_NORTH) {
+            newY -= step;
+        } else if ( direction == Maze.DIR_EAST) {
+            newX += step ;
+        } else if ( direction == Maze.DIR_SOUTH) {
+            newY += step;
+        } else if ( direction == Maze.DIR_WEST ) {
+            newX -= step; 
+        } else {
+            throw new RuntimeException("what id this??? dir: " + direction);
+        }
+        setLocation(newX, newY);
     }
     
     /**
@@ -82,6 +105,7 @@ public class Robot {
          * direction 필드에 저장합니다.
          */
         
+        direction = (4 + direction -1) % 4;
         // 주의! 아래 메소드 호출 statement를 지우면 안됩니다.
         notifyFacingChanged ( oldDir, direction );
     }
@@ -95,7 +119,7 @@ public class Robot {
          * 현재 방향에서 오른쪽으로 회전했을때의 새로운 방향을 계산해서
          * direction 필드에 저장합니다.
          */
-        
+        direction = (direction + 1) % 4;
         // 주의! 아래 메소드 호출 statement를 지우면 안됩니다.
         notifyFacingChanged ( oldDir, direction );
     }
@@ -152,6 +176,10 @@ public class Robot {
      */
     public int getDirection() {
         return direction;
+    }
+    public String getName() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
 

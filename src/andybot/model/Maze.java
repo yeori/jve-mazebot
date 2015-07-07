@@ -1,6 +1,10 @@
 package andybot.model;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
+
+import andybot.model.IMazeListener.DeathCause;
 
 /**
  *  <pre>
@@ -33,6 +37,8 @@ public class Maze {
     public static final int DIR_WEST = 3;
     
     private Robot bot;
+    
+    private List<IMazeListener> listeners = new ArrayList<>();
     /**
      * 
      * @param rowSize - length of Y direction
@@ -49,6 +55,18 @@ public class Maze {
     public void setBot(Robot bot) {
         this.bot = bot;
         this.bot.addBotListener ( new BotUpdater() );
+        notifyBotAdded(bot);
+    }
+    
+    public void addMazeListener ( IMazeListener l) {
+        if ( listeners.contains(l)){
+            listeners.remove(l);
+        }
+        listeners.add(l);
+    }
+    
+    public void removeMazeListener ( IMazeListener l){
+        listeners.remove(l);
     }
     
     public class BotUpdater implements BotListener {
@@ -68,10 +86,17 @@ public class Maze {
     private void checkBotLocation(Point loc) {
         try {
             if ( map[loc.y][loc.x] != ROAD ) {
+                notifyBotDead(bot);
                 System.out.println("BOT DEAD");
             }
         } catch ( IndexOutOfBoundsException e) {
             System.out.println("OUT OF BOUND");
+        }
+    }
+
+    protected void notifyBotDead(Robot bot) {
+        for(IMazeListener ml : listeners){
+            ml.robotDead(bot, DeathCause.DROPPED);
         }
     }
 
@@ -105,5 +130,11 @@ public class Maze {
      */
     public Robot getRobot() {
         return bot;
+    }
+    
+    protected void notifyBotAdded ( Robot bot ){
+        for(IMazeListener ml : listeners){
+            ml.robotAdded(bot);
+        }
     }
 }

@@ -8,6 +8,10 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import andybot.model.BotListener;
+import andybot.model.FileMazeFactory;
+import andybot.model.IMazeFactory;
+import andybot.model.IMazeListener;
+import andybot.model.IMazeListener.DeathCause;
 import andybot.model.Maze;
 import andybot.model.Robot;
 
@@ -20,6 +24,8 @@ import java.awt.Point;
 
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.PrintStream;
 import java.awt.event.ActionEvent;
 
 public class WinMain extends JFrame {
@@ -34,6 +40,7 @@ public class WinMain extends JFrame {
     private JButton btnRight;
     private JButton btnMove;
     private JMazePanel mazePanel;
+    private DeathCause cause;
 
     /**
      * Launch the application.
@@ -42,7 +49,8 @@ public class WinMain extends JFrame {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    WinMain frame = new WinMain();
+                    IMazeFactory mf = new FileMazeFactory(new File("maze01.mz"));
+                    WinMain frame = new WinMain(mf);
                     frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -54,7 +62,7 @@ public class WinMain extends JFrame {
     /**
      * Create the frame.
      */
-    public WinMain() {
+    public WinMain(IMazeFactory mfac) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         contentPane = new JPanel();
@@ -115,7 +123,7 @@ public class WinMain extends JFrame {
         });
         controllPanel.add(btnMove);
         
-        mazePanel = initMazePanel();
+        mazePanel = initMazePanel(mfac);
         contentPane.add(mazePanel, BorderLayout.CENTER);
         
         installRobotListener ( bot);
@@ -165,19 +173,33 @@ public class WinMain extends JFrame {
      *       
      *           south
      */
-    private JMazePanel initMazePanel ( ) {
-        Maze mz = new Maze(4, 5);
-        mz.setRoad(2, 0);
-        mz.setRoad(2, 1); mz.setRoad(3, 1); mz.setRoad(4, 1);
-        mz.setRoad(4, 2); mz.setRoad(4, 3);
-        mz.setRoad(3, 3); 
-        mz.setRoad(2, 3);
-        mz.setRoad(1, 3); 
-        mz.setRoad(1, 2);
-        
-        mz.setBot(bot);
-        JMazePanel panel = new JMazePanel(mz);
-        
+    private JMazePanel initMazePanel (IMazeFactory fac) {
+        Maze maze =fac.createMaze();
+        maze.setBot(bot);
+        JMazePanel panel = new JMazePanel(maze, 25);
+        installMazeListener ( maze);
         return panel;
+    }
+
+    private void installMazeListener(Maze maze) {
+        final PrintStream out = System.out;
+        maze.addMazeListener(new IMazeListener(){
+
+            @Override
+            public void robotAdded(Robot newbot) {
+                out.println("new bot: " + newbot.getName());
+            }
+
+            @Override
+            public void robotDead(Robot bot, DeathCause cause) {
+                // TODO Auto-generated method stub
+                renderGameOver(cause);
+            }
+            
+        });
+    }
+
+    protected void renderGameOver(DeathCause cause) {
+        mazePanel.setGameOver( cause.getCause() );
     }
 }
