@@ -40,11 +40,21 @@ public class Maze {
     public static final int DIR_WEST = 3;
     
     private Robot bot;
-    
+    /**
+     * 로봇의 시작 위치
+     */
     private Coord start;
+    /**
+     * 로봇이 가야할 목적지
+     */
     private Coord end;
-    
+    /**
+     * 미로의 상태변경(로봇의 이동, 게임 종료여부)을 통보받는 리스너들의 모음
+     */
     private List<IMazeListener> listeners = new ArrayList<>();
+    /**
+     * 현재 맵의 이름
+     */
 	private String mapName;
     
     private static int seq = 10;
@@ -53,7 +63,7 @@ public class Maze {
     	return seq ++ ;
     }
     /**
-     * 
+     * 주어진 크기의 미로를 생성함.
      * @param rowSize - length of Y direction
      * @param colSize - length of X direction
      */
@@ -65,32 +75,41 @@ public class Maze {
     	this.mapName = mapName;
     	map = new int[row][col];
 	}
-    
+    /**
+     * 미로의 이름읠 반환
+     * @return
+     */
     public String getMazeName() {
     	return mapName;
     }
-
-	public void setRoad ( int ir, int ic ) {
+    /**
+     * 주어진 위치에 길을 설치함.
+     * @param ir
+     * @param ic
+     */
+    void setRoad ( int ir, int ic ) {
         map[ir][ic] = ROAD;
     }
-	
-	public Coord getStartLoc() {
+	/**
+	 * 로봇의 시작 위치를 반환합니다.
+	 */
+	public Coord getStartCoord() {
 		return new Coord(this.start);
 	}
 	
-	public void setStartLoc(int ir, int ic) {
+	void setStarCoord(int ir, int ic) {
 		this.start = new Coord(ic, ir);
 		map[ir][ic] = Maze.START;
 		
 		setBot(ir, ic, "AndyBot");
 	}
 	
-	public void setEndLoc(int ir, int ic) {
+	void setEndCoord(int ir, int ic) {
 		this.end = new Coord(ic, ir);
 		map[ir][ic] = Maze.END;
 	}
 
-    Robot setBot(int ir, int ic, String botName) {
+    private Robot setBot(int ir, int ic, String botName) {
     	this.bot = new Robot(ic, ir, botName);
 //        this.bot.setLocation(ic, ir, false);
         this.bot.clearListeners();
@@ -98,7 +117,12 @@ public class Maze {
         notifyBotAdded(bot);
         return this.bot;
     }
-    
+    /**
+     * 미로의 상태변화(로봇의 위치, 게임 진행 상황)를 통보받는 리스너를 등록합니다.
+     * 
+     * @see IMazeListener
+     * @param l
+     */
     public void addMazeListener ( IMazeListener l) {
         if ( listeners.contains(l)){
             listeners.remove(l);
@@ -115,12 +139,6 @@ public class Maze {
         @Override
         public void locationChanged(Coord oldLoc, Coord curLoc) {
             checkBotLocation ( oldLoc, curLoc);
-        }
-
-        @Override
-        public void directionChanged(int oldDir, int newDir) {
-            // TODO Auto-generated method stub
-            
         }
     }
 
@@ -194,13 +212,19 @@ public class Maze {
     public Robot getRobot() {
         return bot;
     }
-    
+    /**
+     * 목적지 좌표 정보를 반환합니다.(로봇이 도달해야하는 위치)
+     * @return
+     */
 	public Coord getEndCoord() {
 		return this.end;
 	}
-	public Robot addRobot(int x, int y, String botName) {
+	
+	Robot addRobot(int x, int y, String botName) {
+		if ( this.bot != null) {
+			throw new MazeException("bot already registered");
+		}
 		return setBot(y, x, botName);
-		
 	}
 
 	

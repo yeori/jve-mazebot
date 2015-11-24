@@ -147,6 +147,7 @@ public class WinMain extends JFrame {
         btnAuto = new JButton("AUTO");
         btnAuto.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		disableControl();
         		processAuto();
         	}
         });
@@ -158,7 +159,25 @@ public class WinMain extends JFrame {
         loadMazeList();
     }
     
-    protected void processAuto() {
+    protected void disableControl() {
+		btnLeft.setEnabled(false);
+		btnRight.setEnabled(false);
+		btnUp.setEnabled(false);
+		btnDown.setEnabled(false);
+		btnAuto.setEnabled(false);
+	}
+    
+    protected void enableControl() {
+    	btnLeft.setEnabled(true);
+		btnRight.setEnabled(true);
+		btnUp.setEnabled(true);
+		btnDown.setEnabled(true);
+		btnAuto.setEnabled(true);
+    }
+
+
+
+	protected void processAuto() {
     	final DefaultPathFinder finder = new DefaultPathFinder(mazePanel.getCurrentMaze(), bot);
     	timer = new Timer( delay, finder);
     	timer.start();
@@ -170,7 +189,6 @@ public class WinMain extends JFrame {
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -201,6 +219,7 @@ public class WinMain extends JFrame {
 				if ( !e.getValueIsAdjusting() ) {
 					try {
 						updateMaze ( new FileInputStream(list.getSelectedValue()) );
+						enableControl();
 					} catch (FileNotFoundException e1) {
 						e1.printStackTrace();
 					}
@@ -214,8 +233,8 @@ public class WinMain extends JFrame {
         IMazeFactory mf = new MazeFactory(in);
         Maze maze = mf.createMaze();
         installMazeListener(maze);
-        Coord start = maze.getStartLoc();
-        maze.addRobot ( start.x(), start.y(), "AndyBot");
+        Coord start = maze.getStartCoord();
+//        maze.addRobot ( start.x(), start.y(), "AndyBot");
         this.bot = maze.getRobot();
         mazePanel.updateMaze(maze);
 	}
@@ -243,12 +262,14 @@ public class WinMain extends JFrame {
 
             @Override
             public void robotAdded(Robot newbot) {
+            	bot = newbot;
                 out.println("new bot: " + newbot.getName());
             }
 
             @Override
             public void gameOver(Robot bot, GameOverCause cause) {
             	renderGameOver(cause);
+            	disableControl();
             	if( timer!= null) {
             		timer.stop();
             	}

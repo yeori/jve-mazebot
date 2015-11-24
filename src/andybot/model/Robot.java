@@ -7,9 +7,6 @@ import java.util.List;
  * <pre>
  * 맵 위에서 움직이는 로봇을 나타냅니다.
  * 
- * <li> turnLeft - 현재 방향에서 왼쪽으로 회전합니다.
- * <li> turnRight - 현재 방향에서 오른쪽으로 회전합니다.
- * <li> moveForward - 현재 방향에서 앞으로 step만큼 전진합니다.
  * </pre>
  * @author chminseo
  *
@@ -129,7 +126,7 @@ public class Robot {
     /**
      * 현재 방향에서 왼쪽을 바라봅니다. 
      */
-    public void turnLeft() {
+    private void turnLeft() {
         int oldDir = direction ;
         /* TODO 왼쪽으로 회전시킵니다.
          * 현재 방향에서 왼쪽으로 회전했을때의 새로운 방향을 계산해서
@@ -144,7 +141,7 @@ public class Robot {
     /**
      * 현재 방향에서 오른쪽을 바라봅니다.
      */
-    public void turnRight() {
+    private void turnRight() {
         int oldDir = direction;
         /* TODO 오른쪽으로 회전시킵니다.
          * 현재 방향에서 오른쪽으로 회전했을때의 새로운 방향을 계산해서
@@ -155,7 +152,7 @@ public class Robot {
         notifyFacingChanged ( oldDir, direction );
     }
     
-    public void turnBack() {
+    private void turnBack() {
     	turnRight();
     	turnRight();
     }

@@ -35,9 +35,9 @@ public class MazeFactory implements IMazeFactory {
             if (ch == '@') {
                 mz.setRoad(ir, ic);
             } else if ( ch == 's') {
-            	mz.setStartLoc (ir, ic);
+            	mz.setStarCoord (ir, ic);
             } else if ( ch == 'e') {
-            	mz.setEndLoc(ir, ic);
+            	mz.setEndCoord(ir, ic);
             }
         }
     }
