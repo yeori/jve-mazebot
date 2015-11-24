@@ -7,7 +7,7 @@ import java.awt.Point;
  * @author chminseo
  *
  */
-public interface BotListener {
+interface BotListener {
     /**
      * 로봇의 위치가 oldLoc에서 curLoc으로 변경되었을때 호출됩니다.
      * 
@@ -15,7 +15,7 @@ public interface BotListener {
      * @param oldLoc
      * @param curLoc
      */
-    public void locationChanged (Point oldLoc, Point curLoc) ;
+    public void locationChanged (Coord oldLoc, Coord curLoc) ;
     /**
      * 로봇의 방향이 newDir로 바뀌었을때 호출됩니다.
      * 방향값은 {@link Maze} 의 4가지 방향값 중 하나입니다.

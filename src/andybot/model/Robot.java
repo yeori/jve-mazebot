@@ -16,18 +16,14 @@ import java.util.List;
  */
 public class Robot {
 
-    private Point loc = null;
+	/**
+	 * 현재 위치
+	 */
+    private Coord curLoc = null;
     private List<BotListener> listeners = new ArrayList<>() ;
     private int direction ;
     
     private String name ;
-    /**
-     * 로봇 인스턴스를 생성 후 반환합니다.
-     */
-    public Robot ( ) {
-        // 초기 방향은 북쪽, 위치는 (0,0)에서 시작합니다.
-        this( 0, 0, "unknown bot");
-    }
     
     /**
      * 주어진 위치에서 시작하는 로봇 인스턴스를 생성 후 반환합니다.
@@ -42,15 +38,16 @@ public class Robot {
         // 초기 방향은 북쪽, 위치는 (0,0)에서 시작합니다.
         direction = Maze.DIR_NORTH ;
         this.name = botName;
-        setLocation(x, y);
+//        setLocation(x, y);
+        this.curLoc = new Coord(x, y);
     }
 
-    /**
+	/**
      * 로봇의 현재 위치를 반환합니다.
      * @return (x,y)를 나타낸 Point 타입의 인스턴스
      */
-    public Point getLocation() {
-        return new Point(loc.x, loc.y);
+    public Coord getLocation() {
+        return new Coord(curLoc);
     }
     
     /**
@@ -58,7 +55,7 @@ public class Robot {
      * @return x좌표
      */
     public int getX() {
-        return loc.x;
+        return curLoc.x();
     }
     
     /**
@@ -66,20 +63,54 @@ public class Robot {
      * @return y좌표
      */
     public int getY() {
-        return loc.y;
+        return curLoc.y();
     }
 
+    /**
+     * 위로 1칸 이동함
+     */
+    public void moveUp() {
+    	move(Maze.DIR_NORTH, 1);
+    }
+    
+    /**
+     * 아래로 1칸 이동함.
+     */
+    public void moveDown() {
+    	move(Maze.DIR_SOUTH, 1);
+    }
+    
+    /**
+     * 왼쪽으로 1칸 이동.
+     */
+    public void moveLeft() {
+    	move(Maze.DIR_WEST, 1);
+    }
+    
+    /**
+     * 오른쪽으로 한칸 이동.
+     */
+    public void moveRight() {
+    	move(Maze.DIR_EAST, 1);
+    }
+    
+    void move ( int newDir, int nStep ) {
+    	int oldDir = this.direction;
+    	this.direction = newDir;
+    	if( oldDir != newDir ) {
+    		notifyFacingChanged(oldDir, newDir);
+    	}
+    	moveForward(1);
+    }
+    
     /**
      * 현재 바라보는 방향으로 step 만큼 전진합니다.
      * @param step
      */
     public void moveForward(int step) {
-        /* TODO 앞으로 step만큼 전진하는 코드를 구현해봅니다.
-         * 현재 방향에 따라서 적절한 위치를 계산한 후 setLocation을 호출합니다. 
-         */
         
-        int newX = loc.x;
-        int newY = loc.y;
+        int newX = curLoc.x();
+        int newY = curLoc.y();
         
         if ( direction == Maze.DIR_NORTH) {
             newY -= step;
@@ -123,12 +154,18 @@ public class Robot {
         // 주의! 아래 메소드 호출 statement를 지우면 안됩니다.
         notifyFacingChanged ( oldDir, direction );
     }
+    
+    public void turnBack() {
+    	turnRight();
+    	turnRight();
+    }
 
     private void notifyFacingChanged(int oldDir, int newDir) {
-        if ( listeners.isEmpty()) return ;
+    	// FIXME 일단 막아둠.
+        /*if ( listeners.isEmpty()) return ;
         for ( BotListener bl : listeners) {
             bl.directionChanged(oldDir, newDir);
-        }
+        }*/
     }
 
     /**
@@ -136,18 +173,21 @@ public class Robot {
      * @param x 
      * @param y
      */
-    private void setLocation(int x, int y) {
-        Point oldLoc = loc ==null ? null : new Point ( loc.x, loc.y);
-        if ( loc == null) {
-            loc = new Point();
-        }
-        this.loc.x = x;
-        this.loc.y = y;
-        
-        notifyLocationChanged ( oldLoc, new Point(x, y));
+    void setLocation(int x, int y) {
+        setLocation(x, y, true);
     }
     
-    private void notifyLocationChanged(Point oldLoc, Point newLoc) {
+    void setLocation(int x, int y, boolean shouldNotify) {
+        Coord oldLoc = new Coord ( curLoc ); // copy
+        
+        this.curLoc = new Coord( x, y );
+        
+        if( shouldNotify ) {
+        	notifyLocationChanged ( oldLoc, curLoc);
+        }
+    }
+    
+    private void notifyLocationChanged(Coord oldLoc, Coord newLoc) {
         if ( listeners.isEmpty()) return ;
         for ( BotListener bl : listeners) {
             bl.locationChanged(oldLoc, newLoc);
@@ -178,8 +218,11 @@ public class Robot {
         return direction;
     }
     public String getName() {
-        // TODO Auto-generated method stub
-        return null;
+        return name;
     }
+
+	void clearListeners() {
+		this.listeners.clear();
+	}
 }
 

@@ -4,7 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-import andybot.model.IMazeListener.DeathCause;
+import andybot.model.IMazeListener.GameOverCause;
 
 /**
  *  <pre>
@@ -28,6 +28,9 @@ import andybot.model.IMazeListener.DeathCause;
 public class Maze {
 
     private int [][] map ;
+    public final static int START = 10;
+    public final static int END   = 20;
+    
     public final static int WALL = 0;
     public final static int ROAD = 1;
     
@@ -38,24 +41,62 @@ public class Maze {
     
     private Robot bot;
     
+    private Coord start;
+    private Coord end;
+    
     private List<IMazeListener> listeners = new ArrayList<>();
+	private String mapName;
+    
+    private static int seq = 10;
+    
+    private static int nextSeq() {
+    	return seq ++ ;
+    }
     /**
      * 
      * @param rowSize - length of Y direction
      * @param colSize - length of X direction
      */
     public Maze ( int rowSize, int colSize) {
-        map = new int[rowSize][colSize];
+    	this("no named map + " + nextSeq(), rowSize, colSize);
     }
     
-    public void setRoad ( int x, int y ) {
-        map[y][x] = ROAD;
+    public Maze(String mapName, int row, int col) {
+    	this.mapName = mapName;
+    	map = new int[row][col];
+	}
+    
+    public String getMazeName() {
+    	return mapName;
     }
 
-    public void setBot(Robot bot) {
-        this.bot = bot;
+	public void setRoad ( int ir, int ic ) {
+        map[ir][ic] = ROAD;
+    }
+	
+	public Coord getStartLoc() {
+		return new Coord(this.start);
+	}
+	
+	public void setStartLoc(int ir, int ic) {
+		this.start = new Coord(ic, ir);
+		map[ir][ic] = Maze.START;
+		
+		setBot(ir, ic, "AndyBot");
+	}
+	
+	public void setEndLoc(int ir, int ic) {
+		this.end = new Coord(ic, ir);
+		map[ir][ic] = Maze.END;
+	}
+
+    Robot setBot(int ir, int ic, String botName) {
+    	this.bot = new Robot(ic, ir, botName);
+//        this.bot.setLocation(ic, ir, false);
+        this.bot.clearListeners();
         this.bot.addBotListener ( new BotUpdater() );
         notifyBotAdded(bot);
+        return this.bot;
     }
     
     public void addMazeListener ( IMazeListener l) {
@@ -69,11 +110,11 @@ public class Maze {
         listeners.remove(l);
     }
     
-    public class BotUpdater implements BotListener {
+    class BotUpdater implements BotListener {
 
         @Override
-        public void locationChanged(Point oldLoc, Point curLoc) {
-            checkBotLocation ( curLoc);
+        public void locationChanged(Coord oldLoc, Coord curLoc) {
+            checkBotLocation ( oldLoc, curLoc);
         }
 
         @Override
@@ -83,20 +124,42 @@ public class Maze {
         }
     }
 
-    private void checkBotLocation(Point loc) {
+    private void checkBotLocation(Coord oldLoc, Coord loc) {
         try {
-            if ( map[loc.y][loc.x] != ROAD ) {
-                notifyBotDead(bot);
-                System.out.println("BOT DEAD");
+        	if ( map[loc.y()][loc.x()] == START ) {
+        		System.out.println("START");
+        	} else if ( map[loc.y()][loc.x()] == END ) {
+        		notifySuccess(bot);
+        	} else if ( map[loc.y()][loc.x()] != ROAD ) {
+                notifyBotDead(bot, GameOverCause.NOT_A_ROAD);
+            } else {
+            	notifyBotMoved( bot, oldLoc);
             }
         } catch ( IndexOutOfBoundsException e) {
-            System.out.println("OUT OF BOUND");
+            notifyBotDead(bot, GameOverCause.OUT_OF_MAP);
         }
     }
+    
+    void notifyBotMoved ( Robot bot, Coord oldCoord) {
+    	for( IMazeListener ml : listeners) {
+    		ml.robotMoved(bot, oldCoord);
+    	}
+    }
 
-    protected void notifyBotDead(Robot bot) {
+    void notifySuccess(Robot bot) {
+    	for(IMazeListener ml : listeners){
+            ml.gameOver(bot, GameOverCause.SUCCESS);
+        }
+	}
+    
+	void notifyBotDead(Robot bot, GameOverCause cause) {
         for(IMazeListener ml : listeners){
-            ml.robotDead(bot, DeathCause.DROPPED);
+            ml.gameOver(bot, cause);
+        }
+    }
+	void notifyBotAdded ( Robot bot ){
+        for(IMazeListener ml : listeners){
+            ml.robotAdded(bot);
         }
     }
 
@@ -132,9 +195,13 @@ public class Maze {
         return bot;
     }
     
-    protected void notifyBotAdded ( Robot bot ){
-        for(IMazeListener ml : listeners){
-            ml.robotAdded(bot);
-        }
-    }
+	public Coord getEndCoord() {
+		return this.end;
+	}
+	public Robot addRobot(int x, int y, String botName) {
+		return setBot(y, x, botName);
+		
+	}
+
+	
 }
