@@ -1,4 +1,4 @@
-package andybot.model;
+package andybot;
 
 public class MazeException extends RuntimeException {
 

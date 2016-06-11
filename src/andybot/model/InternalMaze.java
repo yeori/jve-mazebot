@@ -1,10 +1,15 @@
 package andybot.model;
 
-import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import andybot.model.IMazeListener.GameOverCause;
+import andybot.Coord;
+import andybot.GameOverCause;
+import andybot.IMaze;
+import andybot.IMazeListener;
+import andybot.IRobot;
+import andybot.MazeException;
 
 /**
  *  <pre>
@@ -25,25 +30,11 @@ import andybot.model.IMazeListener.GameOverCause;
  * @author chminseo
  *
  */
-public class Maze {
+public class InternalMaze implements IMaze {
 
     private int [][] map ;
-    public final static int START = 10;
-    public final static int END   = 20;
-    
-    public final static int WALL = 0;
-    public final static int ROAD = 1;
-    
-    public static final int DIR_NORTH = 0;
-    public static final int DIR_EAST = 1;
-    public static final int DIR_SOUTH = 2;
-    public static final int DIR_WEST = 3;
-    
     private Robot bot;
-    /**
-     * 로봇의 시작 위치
-     */
-    private Coord start;
+    
     /**
      * 로봇이 가야할 목적지
      */
@@ -67,19 +58,23 @@ public class Maze {
      * @param rowSize - length of Y direction
      * @param colSize - length of X direction
      */
-    public Maze ( int rowSize, int colSize) {
-    	this("no named map + " + nextSeq(), rowSize, colSize);
+//	public InternalMaze ( int rowSize, int colSize) {
+//    	this("no named map + " + nextSeq(), rowSize, colSize);
+//    }
+//    
+//    public InternalMaze(String mapName, int row, int col) {
+//    	this.mapName = mapName;
+//    	map = new int[row][col];
+//	}
+    
+    public InternalMaze ( String mapName, int[][] data, Coord exit) {
+    	this.mapName = mapName;
+    	this.map = data;
+    	this.end = exit;
     }
     
-    public Maze(String mapName, int row, int col) {
-    	this.mapName = mapName;
-    	map = new int[row][col];
-	}
-    /**
-     * 미로의 이름읠 반환
-     * @return
-     */
-    public String getMazeName() {
+    @Override
+	public String getMazeName() {
     	return mapName;
     }
     /**
@@ -90,39 +85,32 @@ public class Maze {
     void setRoad ( int ir, int ic ) {
         map[ir][ic] = ROAD;
     }
-	/**
-	 * 로봇의 시작 위치를 반환합니다.
-	 */
-	public Coord getStartCoord() {
-		return new Coord(this.start);
-	}
+//	/**
+//	 * 로봇의 시작 위치를 반환합니다.
+//	 */
+//	public Coord getStartCoord() {
+//		return new Coord(this.start);
+//	}
 	
-	void setStarCoord(int ir, int ic) {
-		this.start = new Coord(ic, ir);
-		map[ir][ic] = Maze.START;
-		
-		setBot(ir, ic, "AndyBot");
-	}
+//	void setStarCoord(int ir, int ic) {
+//		this.start = new Coord(ic, ir);
+//		map[ir][ic] = IMaze.START;
+//		
+//		setBot(ir, ic, "AndyBot");
+//	}
 	
 	void setEndCoord(int ir, int ic) {
-		this.end = new Coord(ic, ir);
-		map[ir][ic] = Maze.END;
+		this.end = new Coord(ir, ic);
+		map[ir][ic] = IMaze.END;
 	}
 
-    private Robot setBot(int ir, int ic, String botName) {
-    	this.bot = new Robot(ic, ir, botName);
-//        this.bot.setLocation(ic, ir, false);
-        this.bot.clearListeners();
-        this.bot.addBotListener ( new BotUpdater() );
-        notifyBotAdded(bot);
-        return this.bot;
-    }
-    /**
-     * 미로의 상태변화(로봇의 위치, 게임 진행 상황)를 통보받는 리스너를 등록합니다.
-     * 
-     * @see IMazeListener
-     * @param l
-     */
+
+	@Override
+	public Coord getExit() {
+		return end;
+	}
+    
+    @Override
     public void addMazeListener ( IMazeListener l) {
         if ( listeners.contains(l)){
             listeners.remove(l);
@@ -130,6 +118,7 @@ public class Maze {
         listeners.add(l);
     }
     
+    @Override
     public void removeMazeListener ( IMazeListener l){
         listeners.remove(l);
     }
@@ -144,38 +133,38 @@ public class Maze {
 
     private void checkBotLocation(Coord oldLoc, Coord loc) {
         try {
-        	if ( map[loc.y()][loc.x()] == START ) {
-        		System.out.println("START");
-        	} else if ( map[loc.y()][loc.x()] == END ) {
-        		notifySuccess(bot);
-        	} else if ( map[loc.y()][loc.x()] != ROAD ) {
+        	if ( map[loc.rowIndex()][loc.colIndex()] != ROAD ) {
                 notifyBotDead(bot, GameOverCause.NOT_A_ROAD);
             } else {
             	notifyBotMoved( bot, oldLoc);
             }
+        	
+        	if ( end.equals(loc) ) {
+        		notifySuccess(bot);
+        	} 
         } catch ( IndexOutOfBoundsException e) {
             notifyBotDead(bot, GameOverCause.OUT_OF_MAP);
         }
     }
-    
-    void notifyBotMoved ( Robot bot, Coord oldCoord) {
+
+    void notifyBotMoved ( IRobot bot, Coord oldCoord) {
     	for( IMazeListener ml : listeners) {
     		ml.robotMoved(bot, oldCoord);
     	}
     }
 
-    void notifySuccess(Robot bot) {
+    void notifySuccess(IRobot bot) {
     	for(IMazeListener ml : listeners){
             ml.gameOver(bot, GameOverCause.SUCCESS);
         }
 	}
     
-	void notifyBotDead(Robot bot, GameOverCause cause) {
+	void notifyBotDead(IRobot bot, GameOverCause cause) {
         for(IMazeListener ml : listeners){
             ml.gameOver(bot, cause);
         }
     }
-	void notifyBotAdded ( Robot bot ){
+	void notifyBotAdded ( IRobot bot ){
         for(IMazeListener ml : listeners){
             ml.robotAdded(bot);
         }
@@ -189,19 +178,19 @@ public class Maze {
         return map;
     }
 
-    /**
-     * 맵의 행의 길이(y값 증가 방향)를 반환합니다.
-     * @return
-     */
-    public int getRowSize() {
+    /* (non-Javadoc)
+	 * @see andybot.model.IMaze#getRowSize()
+	 */
+    @Override
+	public int getRowSize() {
         return map.length;
     }
 
-    /**
-     * 맵의 열의 길이(x값 증가 방향)을 반환합니다.
-     * @return
-     */
-    public int getColSize() {
+    /* (non-Javadoc)
+	 * @see andybot.model.IMaze#getColSize()
+	 */
+    @Override
+	public int getColSize() {
         return map[0].length;
     }
 
@@ -220,11 +209,60 @@ public class Maze {
 		return this.end;
 	}
 	
-	Robot addRobot(int x, int y, String botName) {
+	
+	public IRobot creatBotAt(Coord start) {
 		if ( this.bot != null) {
 			throw new MazeException("bot already registered");
 		}
-		return setBot(y, x, botName);
+		return setBot(start.rowIndex(), start.colIndex(), "robot");
+	}
+	
+    private IRobot setBot(int ir, int ic, String botName) {
+    	this.bot = new Robot(this, botName, new Coord(ir, ic));
+        this.bot.clearListeners();
+        this.bot.addBotListener ( new BotUpdater() );
+        notifyBotAdded(bot);
+        return this.bot;
+    }
+	
+	
+	boolean isRoad(int irow, int icol) {
+		return typeOf ( irow, icol, IMaze.ROAD);
+	}
+	
+	boolean isWall(int irow, int icol) {
+		return typeOf(irow, icol, IMaze.WALL);
+	}
+	
+	private boolean typeOf ( int irow, int icol, int type) {
+		if ( !checkRange ( irow, 0, this.map.length)) {
+			return false;
+		}
+		
+		if ( !checkRange ( icol, 0, this.map[irow].length)) {
+			return false;
+		}
+		return map[irow][icol] == IMaze.ROAD;
+		
+	}
+	
+	private boolean checkRange(int idx, int offset, int len) {
+		return idx >= offset && idx < offset + len ;
+	}
+	
+	void setWall(int ir, int ic) {
+		map[ir][ic] = 0;
+	}
+	
+	boolean canMove(Robot robot, int newX, int newY) {
+		/*
+		 * 로봇이 혼자이기 때문에 일단 무조건 움직이게 함.
+		 */
+		return true;
+	}
+	@Override
+	public List<IRobot> getRobots() {
+		return Arrays.asList(this.bot);
 	}
 
 	

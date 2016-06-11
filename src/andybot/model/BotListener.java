@@ -1,5 +1,7 @@
 package andybot.model;
 
+import andybot.Coord;
+
 /**
  * 로봇의 상태 변화(위치, 방향)를 통보받을때 사용합니다.
  * 

@@ -1,4 +1,4 @@
-package andybot.model;
+package andybot;
 /**
  * 좌표를 나타냄
  * @author chmin.seo
@@ -6,52 +6,35 @@ package andybot.model;
  */
 public class Coord {
 
-	private int x;
-	private int y;
-	public Coord(int x, int y) {
+	private int row;
+	private int col;
+	public Coord(int irow, int icol) {
 		super();
-		this.x = x;
-		this.y = y;
+		this.row = irow;
+		this.col = icol;
 	}
 	
 	public Coord(Coord loc) {
-		this.x = loc.x;
-		this.y = loc.y;
+		this.row = loc.row;
+		this.col = loc.col;
 	}
 
-	public int x() {
-		return x;
-	}
-	public void x(int nx) {
-		x = nx;
-	}
-	
-	public int y() {
-		return y;
-	}
-	public void y(int ny) {
-		y = ny;
-	}
-	
 	public int rowIndex() {
-		return y;
+		return row;
 	}
 	
 	public int colIndex() {
-		return x;
+		return col;
 	}
-	
-	
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + x;
-		result = prime * result + y;
+		result = prime * result + row;
+		result = prime * result + col;
 		return result;
 	}
-
 
 	@Override
 	public boolean equals(Object obj) {
@@ -62,18 +45,19 @@ public class Coord {
 		if (getClass() != obj.getClass())
 			return false;
 		Coord other = (Coord) obj;
-		if (x != other.x)
+		if (col != other.col)
 			return false;
-		if (y != other.y)
+		if (row != other.row)
 			return false;
 		return true;
 	}
 
-
 	@Override
 	public String toString() {
-		return "(" + x + ", " + y + ")";
+		return "(r: " + row + ", c: " + col + ")";
 	}
+	
+	
 	
 	
 }
