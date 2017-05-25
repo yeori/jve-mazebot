@@ -68,7 +68,12 @@ public class SouthMovement implements IPathFinder {
 				path.push(botCoord);
 			}
 		} else {
-			next = path.pop();
+			if ( hasMorePath (botCoord )) {
+				next = this.roads.get(botCoord).remove(0);
+				curMode = MODE.FORWARD;
+			} else {
+				next = path.pop();				
+			}
 		}
 		/*
 		 * 다음에 이동 가능한 좌표들이 들어있음.
@@ -77,6 +82,11 @@ public class SouthMovement implements IPathFinder {
 		moveRobot ( robot, next );
 	}
 
+
+	private boolean hasMorePath(Coord coord) {
+		List<Coord> r = this.roads.get(coord);
+		return r != null && r.size() > 0 ; 
+	}
 
 	private void moveRobot(IRobot robot, Coord next) {
 		int dr = next.rowIndex() - robot.rowIndex() ;
