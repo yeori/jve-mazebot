@@ -4,17 +4,17 @@ package andybot;
  * @author chmin.seo
  *
  */
-public class Coord {
+public class Loc {
 
-	private int row;
-	private int col;
-	public Coord(int irow, int icol) {
+	final private int row;
+	final private int col;
+	public Loc(int irow, int icol) {
 		super();
 		this.row = irow;
 		this.col = icol;
 	}
 	
-	public Coord(Coord loc) {
+	public Loc(Loc loc) {
 		this.row = loc.row;
 		this.col = loc.col;
 	}
@@ -44,7 +44,7 @@ public class Coord {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Coord other = (Coord) obj;
+		Loc other = (Loc) obj;
 		if (col != other.col)
 			return false;
 		if (row != other.row)

@@ -9,15 +9,15 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import andybot.Coord;
-import andybot.GameOverCause;
-import andybot.IMaze;
-import andybot.IMazeListener;
-import andybot.IRobot;
+import andybot.Loc;
+import andybot.MazeException;
+import andybot.BotStatus;
 import andybot.view.renderer.MazeListRenderer;
 import southbot.SouthMovement;
-import andybot.model.InternalMaze;
+import andybot.model.Maze;
 import andybot.model.MazeFactory;
+import andybot.model.Robot;
+import andybot.model.Robot.DIR;
 
 import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
@@ -47,17 +48,17 @@ import javax.swing.border.LineBorder;
 import java.awt.Color;
 import javax.swing.border.CompoundBorder;
 
-public class WinMain extends JFrame {
+public class MazeFrame extends JFrame {
 
     private static final long serialVersionUID = 1121929876266708942L;
     private JPanel contentPane;
     
-    private IRobot bot ;
+    private Robot bot ;
     private JPanel controllPanel;
     private JButton btnLeft;
     private JButton btnRight;
     private JMazePanel mazePanel;
-    private GameOverCause cause;
+    private BotStatus cause;
 
     private Map<String, File> mazeFiles = new HashMap<>();
     private DefaultListModel<File> model = new DefaultListModel<>();
@@ -91,7 +92,7 @@ public class WinMain extends JFrame {
             public void run() {
                 try {
                 	
-                    WinMain frame = new WinMain();
+                    MazeFrame frame = new MazeFrame();
                     frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -105,7 +106,7 @@ public class WinMain extends JFrame {
     /**
      * Create the frame.
      */
-    public WinMain( ) {
+    public MazeFrame( ) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 680, 500);
         contentPane = new JPanel();
@@ -136,7 +137,8 @@ public class WinMain extends JFrame {
         btnLeft = new JButton("LEFT");
         btnLeft.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                bot.moveLeft();
+            	moveBot( bot, Robot.DIR.WEST);
+//                bot.moveLeft();
             }
         });
         controllPanel.add(btnLeft);
@@ -144,7 +146,8 @@ public class WinMain extends JFrame {
         btnRight = new JButton("RIGHT");
         btnRight.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                bot.moveRight();
+            	moveBot( bot, Robot.DIR.EAST);
+//                bot.moveRight();
             }
         });
         controllPanel.add(btnRight);
@@ -152,7 +155,8 @@ public class WinMain extends JFrame {
         btnUp = new JButton("UP");
         btnUp.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		bot.moveUp();
+        		moveBot( bot, Robot.DIR.NORTH);
+//        		bot.moveUp();
         	}
         });
         controllPanel.add(btnUp);
@@ -160,7 +164,8 @@ public class WinMain extends JFrame {
         btnDown = new JButton("Down");
         btnDown.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		bot.moveDown();
+        		moveBot( bot, Robot.DIR.SOUTH);
+//        		bot.moveDown();
         	}
         });
         controllPanel.add(btnDown);
@@ -247,6 +252,18 @@ public class WinMain extends JFrame {
         moveField.setColumns(10);
     }
 
+	protected void moveBot(Robot bot, DIR dir) {
+		BotStatus status = mazePanel.getCurrentMaze().moveBot(bot, dir);
+		if( status == BotStatus.NOT_ON_THE_ROAD || 
+				status == BotStatus.OUT_OF_MAP || 
+				status == BotStatus.ON_THE_EXIT) {
+			renderGameOver(status);
+		} else {
+			mazePanel.repaint();
+		}
+	}
+
+
 	protected void updateTimerInterval(String msec) {
     	/*
     	 * 숫자 이외의 문자열을 모두 걸러낸 후 숫자들만 이어붙입니다.
@@ -272,7 +289,7 @@ public class WinMain extends JFrame {
     protected void resetControl() {
     	timer = null;
     	try( FileInputStream fis = new FileInputStream(this.mazeList.getSelectedValue()) ) {
-			updateMaze(fis);
+			updateMaze(this.mazeList.getSelectedValue().getName(), fis);
 			enableControl();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -301,16 +318,16 @@ public class WinMain extends JFrame {
     }
 
 	protected void processAuto() {
-		final IMaze maze = mazePanel.getCurrentMaze();
+		final Maze maze = mazePanel.getCurrentMaze();
     	final SouthMovement finder = new SouthMovement();
     	timer = new Timer( delay, new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final IRobot bot = new ProxyBot( maze.getRobots().get(0)) ;
+//				final Robot bot = new ProxyBot( maze.getRobots().get(0)) ;
 				finder.moveRobot(maze, bot);
 			}
 		});
-    	finder.onStart(maze, maze.getRobots().get(0));
+    	finder.onReady(maze, maze.getRobot() );
     	timer.start();
 	}
 
@@ -331,7 +348,8 @@ public class WinMain extends JFrame {
 				JList<File> list = (JList<File>) e.getSource();
 				if ( !e.getValueIsAdjusting() ) {
 					try {
-						updateMaze ( new FileInputStream(list.getSelectedValue()) );
+						File file = list.getSelectedValue();
+						updateMaze (file.getName(), new FileInputStream(list.getSelectedValue()) );
 						enableControl();
 					} catch (FileNotFoundException e1) {
 						e1.printStackTrace();
@@ -342,15 +360,20 @@ public class WinMain extends JFrame {
 		});
 	}
     
-    void updateMaze(InputStream in) {
+    void updateMaze(String filePath, InputStream in) {
         MazeFactory mf = new MazeFactory(in);
-        InternalMaze maze = (InternalMaze) mf.createMaze();
-        installMazeListener( maze );
-        
-        IRobot robot = maze.getRobot();
-        
-        this.bot = robot;
-        mazePanel.updateMaze(maze);
+        try {
+        	Maze maze = (Maze) mf.createMaze();
+        	Robot robot = maze.getRobot();
+        	
+        	this.bot = robot;
+        	mazePanel.updateMaze(maze);
+        } catch ( MazeException e ) {
+        	JOptionPane.showMessageDialog(
+        			this, 
+        			e.getMessage(), 
+        			"FILE " + filePath, JOptionPane.ERROR_MESSAGE);
+        }
 	}
 
 	/**
@@ -377,34 +400,7 @@ public class WinMain extends JFrame {
         return  mazeWrapper;
     }
 
-    private void installMazeListener( IMaze maze) {
-        final PrintStream out = System.out;
-        maze.addMazeListener(new IMazeListener(){
-
-            @Override
-            public void robotAdded(IRobot newbot) {
-            	bot = newbot;
-                out.println("new bot: " + newbot.getName());
-            }
-
-            @Override
-            public void gameOver(IRobot bot, GameOverCause cause) {
-            	renderGameOver(cause);
-            	if( timer!= null && timer.isRunning()) {
-            		timer.stop();
-            	}
-            }
-			@Override
-			public void robotMoved(IRobot bot, Coord oldCoord) {
-				mazePanel.repaint();
-			}
-			
-			
-            
-        });
-    }
-
-    protected void renderGameOver(GameOverCause cause) {
+    protected void renderGameOver(BotStatus cause) {
         mazePanel.setGameOver( cause.getCause() );
         disableControl();
         btnReset.setEnabled(true);

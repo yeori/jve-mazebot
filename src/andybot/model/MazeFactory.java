@@ -1,14 +1,14 @@
 package andybot.model;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-import andybot.Coord;
-import andybot.IMaze;
-import andybot.IMazeFactory;
+import andybot.Loc;
 import andybot.MazeException;
 
-public class MazeFactory implements IMazeFactory {
+public class MazeFactory {
 
     private InputStream mazeInputStream;
 
@@ -16,91 +16,65 @@ public class MazeFactory implements IMazeFactory {
         mazeInputStream = in;
     }
 
-    private Coord start ;
-    private Coord end ;
-    @Override
-    public IMaze createMaze() {
+    private Loc start ;
+    private Loc end ;
+
+    public Maze createMaze() throws MazeException {
         Scanner sc;
         sc = new Scanner(mazeInputStream);
         String name = readMapName(sc);
-        int row = readRow(sc);
-        int col = readCol(sc);
         
-        int [][] data = new int[row][col];
-        for (int ir = 0; ir < row; ir++) {
-            initMazeRow(ir, data, sc.nextLine());
+        List<int []> data = new ArrayList<>();
+        while ( sc.hasNextLine()) {
+        	loadEachRow(data.size(), data, sc.nextLine().trim());        	
         }
         
+        if ( start == null) {
+        	throw new MazeException("robot location not specified with a character 's'.");        	
+        }
         if ( end == null ) {
-        	throw new MazeException("no exit found.");
+        	throw new MazeException("an exit not specified with a character 'e'.");
         }
         
-        InternalMaze mz = new InternalMaze(name, data, end);
+        int [][] arr = data.stream().toArray( R -> new int[R][]);
+        Maze mz = new Maze(name, arr, end);
+        mz.creatBotAt ( start, "ANDY");
         
-        if ( start != null ) {
-        	mz.creatBotAt ( start );
-        }
         return mz;
     }
 
-
-	private void initMazeRow(final int ir, int[][] data, String rows) {
-		if ( data[ir].length < rows.length()) {
-			throw new MazeException("row string is greater than maze: " + rows + "at row " + ( ir+1));
+	private void loadEachRow(final int ir, List<int[] >data, String line) {
+		if ( data.size() > 0 && data.get(0).length  != line.length() ) {
+			throw new MazeException(
+					"length of columns should be %d, but %d\n[%s] at line %d", 
+					data.get(0).length,  
+					line.length(),
+					line,
+					ir+2) ;
 		}
-		for (int ic = 0; ic < data[ir].length; ic++) {
-            char ch = rows.charAt(ic);
+		
+		int [] row = new int[ line.length()];
+		for (int ic = 0; ic < row.length; ic++) {
+            char ch = line.charAt(ic);
             if (ch == '@' || ch == 's' || ch == 'e') {
-                data[ir][ic] = IMaze.ROAD;
+                row[ic] = Maze.ROAD;
             } else {
-            	data[ir][ic] = IMaze.WALL;
+            	row[ic] = Maze.WALL;
             }
             
-            if ( ch == 's') {
-            	start = new Coord(ir, ic);
+            if ( ch == 's' || ch == 'S') {
+            	start = new Loc(ir, ic);
             }
             
-            if ( ch == 'e') {
-            	end = new Coord ( ir, ic);
+            if ( ch == 'e' || ch == 'E') {
+            	end = new Loc ( ir, ic);
             }
         }
+		data.add(row);
 	}
-
-
-	/*private void initMazeRow(int ir, InternalMaze mz, String rows) {
-        for (int ic = 0; ic < rows.length(); ic++) {
-            char ch = rows.charAt(ic);
-            if (ch == '@' || ch == 's' || ch == 'e') {
-                mz.setRoad(ir, ic);
-            } else {
-            	mz.setWall ( ir,ic);
-            }
-            
-            if ( ch == 's') {
-            	start = new Coord(ic, ir);
-            }
-            
-            if ( ch == 'e') {
-            	end = new Coord ( ic, ir);
-            }
-        }
-    }*/
 
 	private String readMapName(Scanner sc) {
 		String line = sc.nextLine();
 		return line.substring(line.indexOf('=') + 1).trim();
 	}
-	
-    private int readRow(Scanner sc) {
-        // r=x
-        String line = sc.nextLine();
-        return Integer.parseInt(line.substring(line.indexOf('=') + 1).trim());
-    }
-
-    private int readCol(Scanner sc) {
-        // c=x
-        String line = sc.nextLine();
-        return Integer.parseInt(line.substring(line.indexOf('=') + 1).trim());
-    }
-
 }

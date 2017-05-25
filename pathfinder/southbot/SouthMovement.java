@@ -7,48 +7,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import andybot.Coord;
-import andybot.IMaze;
-import andybot.IRobot;
+import andybot.Loc;
+import andybot.model.Maze;
+import andybot.model.Robot;
 import andybot.model.path.IPathFinder;
 
 public class SouthMovement implements IPathFinder {
 
 	private int [][] map ;
 	public enum MODE {FORWARD, BACKWARD };
+
+	private Map<Loc, List<Loc>> roads = new HashMap<>();
+	
+	private Stack<Loc> path = new Stack<>();
+	
+	private MODE curMode = MODE.FORWARD;
+	
 	@Override
 	public String getName() {
 		return "SoutBot";
 	}
 	
 	@Override
-	public void onStart(IMaze maze, IRobot robot ) {
-		int r = maze.getRowSize();
-		int c = maze.getColSize();
+	public void onReady(Maze maze, Robot robot ) {
+		int r = maze.countRow();
+		int c = maze.countColumn();
 		/*
 		 * 2차원 배열의 각각의 값이 0이면 알 수 없음. -1 이면 갈 수 없음. 1이면 갈 수 있음.
 		 */
 		map = new int[r][c]; // 모두 0으로 초기화됨.
 	}
-//	private List<Coord> roadsToVisit = new ArrayList<>();
 	
-	private Map<Coord, List<Coord>> roads = new HashMap<>();
-	
-	private Stack<Coord> path = new Stack<>();
-	
-	private MODE curMode = MODE.FORWARD;
 	@Override
-	public void moveRobot(IMaze maze, IRobot robot) {
-		Coord botCoord = robot.getLocation();
+	public void moveRobot(Maze maze, Robot robot) {
+		Loc botCoord = robot.getLocation();
 		int ir = robot.rowIndex();
 		int ic = robot.columnIndex();
 		System.out.println("bot at : " + ir + ", "  + ic);
 		checkAsVisited (ir, ic );
-		Coord next = null;
+		Loc next = null;
 		
 		if  ( curMode == MODE.FORWARD ) {
 			
-			List<Coord> adjacent = findNeighBors( robot );
+			List<Loc> adjacent = findNeighBors( robot );
 			adjacent = filterVisitedCoords ( adjacent );
 			
 			if ( adjacent.size() == 1) {
@@ -83,12 +84,12 @@ public class SouthMovement implements IPathFinder {
 	}
 
 
-	private boolean hasMorePath(Coord coord) {
-		List<Coord> r = this.roads.get(coord);
+	private boolean hasMorePath(Loc coord) {
+		List<Loc> r = this.roads.get(coord);
 		return r != null && r.size() > 0 ; 
 	}
 
-	private void moveRobot(IRobot robot, Coord next) {
+	private void moveRobot(Robot robot, Loc next) {
 		int dr = next.rowIndex() - robot.rowIndex() ;
 		int dc = next.colIndex() - robot.columnIndex();
 		System.out.println(dr + ", " + dc);
@@ -103,11 +104,11 @@ public class SouthMovement implements IPathFinder {
 		}
 	}
 
-	private List<Coord> filterVisitedCoords(List<Coord> coords) {
+	private List<Loc> filterVisitedCoords(List<Loc> coords) {
 		for ( int ir = 0 ; ir < map.length; ir ++ ) {
 			for ( int ic = 0 ; ic < map[ir].length; ic ++) {
 				if ( map[ir][ic] > 0 ) {
-					coords.remove(new Coord ( ir, ic ));
+					coords.remove(new Loc ( ir, ic ));
 				}
 			}
 		}
@@ -118,21 +119,21 @@ public class SouthMovement implements IPathFinder {
 		map [ir][ic] = 1;
 	}
 
-	private List<Coord> findNeighBors( IRobot bot) {
-		List<Coord> coords = new ArrayList<>();
+	private List<Loc> findNeighBors( Robot bot) {
+		List<Loc> coords = new ArrayList<>();
 		int ir = bot.rowIndex();
 		int ic = bot.columnIndex();
 		if ( bot.canMoveUp() ) {
-			coords.add ( new Coord(ir-1, ic) );
+			coords.add ( new Loc(ir-1, ic) );
 		}
 		if ( bot.canMoveRight() ) {
-			coords.add( new Coord(ir, ic+1 ));
+			coords.add( new Loc(ir, ic+1 ));
 		}
 		if ( bot.canMoveDown()) {
-			coords.add( new Coord(ir+1, ic ));
+			coords.add( new Loc(ir+1, ic ));
 		}
 		if ( bot.canMoveLeft()) {
-			coords.add( new Coord(ir, ic-1 ));
+			coords.add( new Loc(ir, ic-1 ));
 		}
 		return coords;
 	}

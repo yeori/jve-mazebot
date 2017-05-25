@@ -1,10 +1,12 @@
 package andybot.model.path;
 
-import andybot.IMaze;
-import andybot.IRobot;
+import andybot.model.Maze;
+import andybot.model.Robot;
 
 public interface IPathFinder {
 	String getName();
-	void moveRobot(IMaze maze, IRobot robot);
-	void onStart(IMaze maze, IRobot robot);
+	
+	void onReady(Maze maze, Robot robot);
+
+	void moveRobot(Maze maze, Robot robot);
 }

@@ -10,10 +10,9 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
-import andybot.Coord;
-import andybot.IMaze;
-import andybot.IRobot;
-import andybot.model.InternalMaze;
+import andybot.Loc;
+import andybot.model.Maze;
+import andybot.model.Robot;
 
 public class JMazePanel extends JPanel {
 
@@ -22,7 +21,7 @@ public class JMazePanel extends JPanel {
      */
     private static final long serialVersionUID = -5011576696483366305L;
     final static int CELL_SIZE = 20; // 20 pixels per cell
-    private InternalMaze maze;
+    private Maze maze;
     private int cellSize = CELL_SIZE;
     private boolean gameOver;
     private String gameOverMsg;
@@ -35,16 +34,16 @@ public class JMazePanel extends JPanel {
         this( null, CELL_SIZE);
     }
     
-    public JMazePanel(InternalMaze maze, int cellSize) {
+    public JMazePanel(Maze maze, int cellSize) {
     	this.cellSize = cellSize;
     	this.maze = maze;
     	updateMaze(maze);
     }
     
-    public IMaze getCurrentMaze() {
+    public Maze getCurrentMaze() {
     	return this.maze;
     }
-    public void updateMaze( InternalMaze newMaze) {
+    public void updateMaze( Maze newMaze) {
     	maze = newMaze ;
     	if ( maze == null) {
     		return ;
@@ -67,36 +66,31 @@ public class JMazePanel extends JPanel {
     protected void paintComponent(Graphics g) {
     	g.setColor(Color.WHITE);
     	g.fillRect(0, 0, getWidth(), getHeight());
-    	int sz = Math.min(getWidth(), getHeight())/(maze==null ? cellSize : maze.getRowSize());
+    	int sz = Math.min(getWidth(), getHeight())/(maze==null ? cellSize : maze.countRow());
     	if ( maze != null) {
     		drawMaze(g, maze, sz);
-    		
-    		List<IRobot> robots = maze.getRobots();
-    		for ( IRobot r : robots) {
-    			drawRobot( g, r, sz);    		
-    		}
+    		drawRobot( g, maze.getRobot(), sz);    		
     	}
     	
     	// 3. gameover
     	if ( gameOver ) {
-    		drawGameOver(g, sz);    		
+    		drawGameOver(g, sz);
     	}
     }
 
-    private void drawMaze(Graphics g, InternalMaze maze, int sz) {
+    private void drawMaze(Graphics g, Maze maze, int sz) {
         int[][] map = maze.getMapData();
         
         for ( int ir = 0 ; ir < map.length; ir++) {
             for ( int ic = 0 ; ic < map[ir].length; ic++) {
-                if ( map[ir][ic] == IMaze.ROAD) {
+                if ( map[ir][ic] == Maze.ROAD) {
                     drawRoad(g, ic*sz, ir*sz, sz);
-                } else if ( map[ir][ic] == IMaze.WALL ) {
+                } else if ( map[ir][ic] == Maze.WALL ) {
                     drawWall(g, ic*sz, ir*sz, sz);
                 }
-                
             }
         }
-        Coord exit = maze.getExit();
+        Loc exit = maze.getExit();
         drawGate(g, exit.colIndex()*sz, exit.rowIndex()*sz, sz, "E");
     }
 
@@ -132,9 +126,9 @@ public class JMazePanel extends JPanel {
         g.setColor(cache);
     }
     
-    private void drawRobot(Graphics g, IRobot robot, int sz) {
+    private void drawRobot(Graphics g, Robot robot, int sz) {
         // 1. body
-        Coord loc = robot.getLocation();
+        Loc loc = robot.getLocation();
 //        int sz = cellSize;
         int px = loc.colIndex() * sz;
         int py = loc.rowIndex() * sz;
@@ -151,7 +145,7 @@ public class JMazePanel extends JPanel {
     }
 
 
-    private void drawEyes(IRobot bot, Graphics g, int px, int py, int width, int height) {
+    private void drawEyes(Robot bot, Graphics g, int px, int py, int width, int height) {
         int x =px, y = py, w = width, h = height ;
         int mgn = 2; // margin
         g.setColor(Color.RED);
@@ -189,8 +183,8 @@ public class JMazePanel extends JPanel {
         Color cached = g.getColor();
         
         g.setColor(Color.RED);
-        int W = maze.getRowSize() * sz;
-        int H = maze.getColSize() * sz;
+        int W = maze.countRow() * sz;
+        int H = maze.countColumn() * sz;
         Font font = new Font("Gulim", Font.BOLD, sz);
         
         Dimension fontDim = calculateFontArea ( this.gameOverMsg, font);
