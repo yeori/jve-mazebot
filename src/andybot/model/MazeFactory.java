@@ -1,10 +1,12 @@
 package andybot.model;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Scanner;
+
+import andybot.Coord;
+import andybot.IMaze;
+import andybot.IMazeFactory;
+import andybot.MazeException;
 
 public class MazeFactory implements IMazeFactory {
 
@@ -14,33 +16,75 @@ public class MazeFactory implements IMazeFactory {
         mazeInputStream = in;
     }
 
+    private Coord start ;
+    private Coord end ;
     @Override
-    public Maze createMaze() {
+    public IMaze createMaze() {
         Scanner sc;
         sc = new Scanner(mazeInputStream);
         String name = readMapName(sc);
         int row = readRow(sc);
         int col = readCol(sc);
-        Maze mz = new Maze(name, row, col);
+        
+        int [][] data = new int[row][col];
         for (int ir = 0; ir < row; ir++) {
-            initMazeRow(ir, mz, sc.nextLine());
+            initMazeRow(ir, data, sc.nextLine());
+        }
+        
+        if ( end == null ) {
+        	throw new MazeException("no exit found.");
+        }
+        
+        InternalMaze mz = new InternalMaze(name, data, end);
+        
+        if ( start != null ) {
+        	mz.creatBotAt ( start );
         }
         return mz;
     }
 
 
-	private void initMazeRow(int ir, Maze mz, String rows) {
-        for (int ic = 0; ic < rows.length(); ic++) {
+	private void initMazeRow(final int ir, int[][] data, String rows) {
+		if ( data[ir].length < rows.length()) {
+			throw new MazeException("row string is greater than maze: " + rows + "at row " + ( ir+1));
+		}
+		for (int ic = 0; ic < data[ir].length; ic++) {
             char ch = rows.charAt(ic);
-            if (ch == '@') {
-                mz.setRoad(ir, ic);
-            } else if ( ch == 's') {
-            	mz.setStarCoord (ir, ic);
-            } else if ( ch == 'e') {
-            	mz.setEndCoord(ir, ic);
+            if (ch == '@' || ch == 's' || ch == 'e') {
+                data[ir][ic] = IMaze.ROAD;
+            } else {
+            	data[ir][ic] = IMaze.WALL;
+            }
+            
+            if ( ch == 's') {
+            	start = new Coord(ir, ic);
+            }
+            
+            if ( ch == 'e') {
+            	end = new Coord ( ir, ic);
             }
         }
-    }
+	}
+
+
+	/*private void initMazeRow(int ir, InternalMaze mz, String rows) {
+        for (int ic = 0; ic < rows.length(); ic++) {
+            char ch = rows.charAt(ic);
+            if (ch == '@' || ch == 's' || ch == 'e') {
+                mz.setRoad(ir, ic);
+            } else {
+            	mz.setWall ( ir,ic);
+            }
+            
+            if ( ch == 's') {
+            	start = new Coord(ic, ir);
+            }
+            
+            if ( ch == 'e') {
+            	end = new Coord ( ic, ir);
+            }
+        }
+    }*/
 
 	private String readMapName(Scanner sc) {
 		String line = sc.nextLine();
